@@ -1,23 +1,16 @@
 package ir.ac.kntu;
 
-import java.util.HashSet;
 import java.util.Objects;
 
-public class Tour {
+public class Tour extends TourType{
     private TourLeader tourLeader;
     private int tourId;
     private Date startDate;
-    private TourContainer tourType;
 
     public Tour(){
-        this(new TourLeader(), 0, new Date(0, 1, 1), new TourContainer());
-    }
-
-    public Tour(TourLeader tourLeader , int tourId, Date startDate, TourContainer tourType){
-        setTourLeader(tourLeader);
-        setTourId(tourId);
-        setStartDate(startDate);
-        setTourType(tourType);
+        setTourLeader(new TourLeader());
+        setTourId(0);
+        setStartDate(new Date(0, 1, 1));
     }
 
     public void setTourLeader(TourLeader tourLeader){
@@ -36,10 +29,6 @@ public class Tour {
         this.startDate = new Date(startDate);
     }
 
-    public void setTourType(TourContainer tourType){
-        this.tourType = new TourContainer(tourType);
-    }
-
     public TourLeader getTourLeader(){
         return new TourLeader(tourLeader);
     }
@@ -52,31 +41,27 @@ public class Tour {
         return startDate;
     }
 
-    public TourContainer getTourType() {
-        return tourType;
-    }
-
     @Override
     public String toString() {
         return "tourLeader: " + tourLeader + "\n" +
                 "tourId: " + tourId + "\n" +
                 "startDate: " + startDate + "\n" +
-                "tourType: " + tourType;
+                "tourType: " + super.toString();
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         Tour tour = (Tour) o;
         return tourId == tour.tourId &&
-                Objects.equals(tourLeader, tour.tourLeader) &&
-                Objects.equals(startDate, tour.startDate) &&
-                Objects.equals(tourType, tour.tourType);
+                tourLeader.equals(tour.tourLeader) &&
+                startDate.equals(tour.startDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tourLeader, tourId, startDate, tourType);
+        return Objects.hash(super.hashCode(), tourLeader, tourId, startDate);
     }
 }

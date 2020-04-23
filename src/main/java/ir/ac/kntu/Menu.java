@@ -1,49 +1,69 @@
 package ir.ac.kntu;
 
-import org.checkerframework.checker.regex.qual.Regex;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.Console;
-import java.io.Flushable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.logging.ConsoleHandler;
 
 public class Menu {
-    Scanner input;
-    String pointer;
-    TourList tourList;
+    private Scanner input;
+    private String pointer;
+    private String curUser;
+    private TourManagement tourManagement;
+    private Map map;
+    private java.util.Map<String, User> users;
+
+    private final String nameRegex = "[a-zA-Z][a-zA-Z ]+";
+    private final String idRegex = "[1-9][0-9]+";
+    private final String dateRegex = "[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])";
+    private final String locationRegex = "[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)";
+    private final String userRegex = "[a-zA-Z0-9 ]+";
+
 
     public Menu(){
         input = new Scanner(System.in);
-        pointer = "1";
-        tourList = new TourList();
+        pointer = "2";
+        tourManagement = new TourManagement();
+        map = new Map();
+        users = new HashMap<>();
+        curUser = "gust";
+        users.put(curUser, new User());
+        users.put("Admin", new User("Admin", "1111",
+                "exmpl@gmail.com", "09111111111", UserState.Admin));
     }
 
     public void setDefault(){
         pointer = "1";
     }
+    public void setDefaultCustomer(){
+        pointer = "2";
+    }
 
-    public void showDefault() {
+    private void showDefault() {
         System.out.println("Enter the number of option you want to see");
         System.out.println("1- Leaders");
         System.out.println("2- Tours");
         System.out.println("3- Locations");
         System.out.println("4- Maps");
-
-        String buffer = input.next();
-        if(!buffer.matches("[1-4]")){
-            clearScreen();
-            System.out.println("Incorrect input.");
-            return;
-        }
-        pointer += buffer;
-        clearScreen();
+        System.out.println("5- User settings");
+        System.out.println("6- Edit user");
+        checkInput(7);
     }
 
-    public void showLeaders(){
-        String buffer;
+    private void showDefaultCostumer() {
+        System.out.println("Enter the number of option you want to see");
+        System.out.println("1- Leaders");
+        System.out.println("2- Tours");
+        System.out.println("3- Locations");
+        System.out.println("4- Maps");
+        System.out.println("5- Edit user");
+        System.out.println("6- Change user");
+        checkInput(7);
+    }
+
+    private void leaderMenu(){
         System.out.println("1- Show leaders");
         System.out.println("2- Add leader");
         System.out.println("3- Remove leader");
@@ -53,83 +73,64 @@ public class Menu {
         checkInput(6);
     }
 
-    public void showLeaderList(){
-        if(tourList == null){
-            System.out.println("There is any tour.");
-            waitInput();
-            return;
-        }
-
-        if(tourList.getTourLeaderList().getTourLeaders() == null ||
-                tourList.getTourLeaderList().getTourLeaders().size() == 0){
-            back();
-            System.out.println("There is any tourLeader in the list.");
-            return;
-        }
-        System.out.println(tourList.getTourLeaderList().getTourLeaders());
-        System.out.println("Press 1 for back");
-        String buffer = input.next();
-        if(buffer.equals("1")){
-            back();
-        }
+    private void leaderMenuCostumer(){
+        System.out.println("1- Show leaders");
+        System.out.println("2- FindLeader");
+        System.out.println("3- Back");
+        checkInput(3);
     }
 
-    public void addLeader(){
-        clearScreen();
+    private void showLeaderList(){
+        System.out.println(tourManagement.getTourLeaderList().getTourLeaders().size() == 0 ?
+                "There is any tourLeader in the list.": tourManagement.getTourLeaderList().getTourLeaders().toString());
+        waitInput();
+    }
+
+    private void addLeader(){
         TourLeader tourLeader = new TourLeader();
         String data;
-        tourLeader.setName(checkUntil("[a-zA-Z][a-zA-Z ]+", "Enter name",
-                "Incorrect name. Try again."));
-        tourLeader.setLastName(checkUntil("[a-zA-Z][a-zA-Z ]+", "Enter last name",
-                "Incorrect last name. Try again."));
-        tourLeader.setNationalId(checkUntil("[1-9][0-9]+", "Enter national Id",
-                "Incorrect national Id. Try again."));
-        tourLeader.setBirthCertId(checkUntil("[1-9][0-9]+", "Enter birth certificate Id",
-                "Incorrect birth certificate Id. Try again."));
-        data = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                "Enter birth date as year-month-day",
-                "Incorrect birth date");
-        tourLeader.setBirthDate(new Date(Integer.parseInt(data.split("-")[0]),
-                Integer.parseInt(data.split("-")[1]), Integer.parseInt(data.split("-")[2])));
-        data = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                "Enter hire date as year-month-day",
-                "Incorrect hire date");
-        tourLeader.setHireDate(new Date(Integer.parseInt(data.split("-")[0]),
-                Integer.parseInt(data.split("-")[1]), Integer.parseInt(data.split("-")[2])));
+        tourLeader.setName(checkUntil(nameRegex, "Enter name"));
+        tourLeader.setLastName(checkUntil(nameRegex, "Enter last name"));
+        tourLeader.setNationalId(checkUntil(idRegex, "Enter national Id"));
+        tourLeader.setBirthCertId(checkUntil(idRegex, "Enter birth certificate Id"));
+        data = checkUntil(dateRegex, "Enter birth date as year-month-day");
+        tourLeader.setBirthDate(new Date(splitDate(data)[0], splitDate(data)[1], splitDate(data)[2]));
+        data = checkUntil(dateRegex, "Enter hire date as year-month-day");
+        tourLeader.setHireDate(new Date(splitDate(data)[0], splitDate(data)[1], splitDate(data)[2]));
         System.out.println("Enter acquainted locations");
         System.out.println("press 1 if you want to exit");
         while(!data.equals("1")){
             data = input.nextLine();
-            if(data.matches("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)")){
+            if(data.matches(locationRegex)){
                 tourLeader.addAcquaintedLocations(data.split(":")[0], data.split(":")[1]);
             }
             else if(!data.equals("1")){
                 System.out.println("Incorrect location");
             }
         }
-        tourList.addLeader(tourLeader);
-        System.out.println("Press Enter for continue");
-        input.nextLine();
+        tourManagement.addLeader(tourLeader);
+        waitInput();
+    }
+
+    private void removeLeader(){
+        tourManagement.getTourLeaderList().removeTourLeader(checkUntil(nameRegex,"Enter leader name"),
+                checkUntil(nameRegex,"Enter leader last name"));
         back();
     }
 
-    public void removeLeader(){
-        tourList.getTourLeaderList().removeTourLeader(checkUntil("[a-zA-Z][a-zA-Z ]+","Enter leader name",
-                "Incorrect name"), checkUntil("[a-zA-Z][a-zA-Z ]+","Enter leader last name",
-                "Incorrect last name"));
-        back();
-    }
-
-    public void editLeader(){
-        String name = checkUntil("[a-zA-Z][a-zA-Z ]+", "Enter leader name", "Incorrect name");
-        String lastName = checkUntil("[a-zA-Z][a-zA-Z ]+", "Enter leader last name", "Incorrect last name");
-        TourLeader tourLeader = tourList.getTourLeaderList().findSpecTourLeaderByFullName(name, lastName);
+    private void editLeader(){
+        TourLeader tourLeader = tourManagement.getTourLeaderList().findSpecTourLeaderByFullName(
+                checkUntil(nameRegex, "Enter leader name"),
+                checkUntil(nameRegex, "Enter leader last name"));
         if(tourLeader.equals(new TourLeader())){
-            back();
             System.out.println("Can not find the leader");
+            waitInput();
             return;
         }
-        String buffer;
+        editBar(tourLeader);
+    }
+
+    private void editBar(TourLeader tourLeader) {
         System.out.println("1- Change name");
         System.out.println("2- Change last name");
         System.out.println("3- Change national Id");
@@ -139,62 +140,41 @@ public class Menu {
         System.out.println("7- Change acquainted locations");
         System.out.println("8- Back");
         checkInput(8);
-        if(pointer.length() > "114".length()){
-            switch(pointer.substring(pointer.length() - 1)){
-                case "1":
-                    buffer = checkUntil("[a-zA-Z][a-zA-Z ]+", "Enter leader name", "Incorrect input");
-                    tourLeader.setName(buffer);
-                    break;
-                case "2":
-                    buffer = checkUntil("[a-zA-Z][a-zA-Z ]+", "Enter leader last name", "Incorrect input");
-                    tourLeader.setLastName(buffer);
-                    break;
-                case "3":
-                    buffer = checkUntil("[1-9][0-9]+", "Enter leader national Id",
-                            "Incorrect input");
-                    tourLeader.setNationalId(buffer);
-                    break;
-                case "4":
-                    buffer = checkUntil("[1-9][0-9]+", "Enter leader birth certificate Id",
-                            "Incorrect input");
-                    tourLeader.setBirthCertId(buffer);
-                    break;
-                case "5":
-                    buffer = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                            "Enter birth date as year-month-day", "Incorrect birth date");
-                    tourLeader.setBirthDate(new Date(Integer.parseInt(buffer.split("-")[0]),
-                            Integer.parseInt(buffer.split("-")[1]),
-                            Integer.parseInt(buffer.split("-")[2])));
-                    break;
-                case "6":
-                    buffer = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                            "Enter hire date as year-month-day", "Incorrect hire date");
-                    tourLeader.setHireDate(new Date(Integer.parseInt(buffer.split("-")[0]),
-                            Integer.parseInt(buffer.split("-")[1]),
-                            Integer.parseInt(buffer.split("-")[2])));
-                    break;
-                case "7":
-                    buffer = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                            "Enter Location as locationName:coordinate",
-                            "Incorrect input");
-                    tourLeader.getAcquaintedLocations().getLocation().remove(buffer.split(":")[0],
-                            buffer.split(":")[1]);
-                    buffer = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                            "Enter new Location as locationName:coordinate",
-                            "Incorrect input");
-                    tourLeader.getAcquaintedLocations().addLocation(buffer.split(":")[0],
-                            buffer.split(":")[1]);
-                    break;
-            }
-            System.out.println("Press Enter for continue");
-            input.nextLine();
-            back();
+        if(pointer.matches("[1-9]14[1-7]+")) {
+            editLeaderOption(tourLeader);
         }
-
     }
 
-    public void findLeader(){
-        String data;
+    private void editLeaderOption(TourLeader tourLeader) {
+        switch(pointer.substring(pointer.length() - 1)){
+            case "1":
+                tourLeader.setName(checkUntil(nameRegex, "Enter leader name"));
+                break;
+            case "2":
+                tourLeader.setLastName(checkUntil(nameRegex, "Enter leader last name"));
+                break;
+            case "3":
+                tourLeader.setNationalId(checkUntil(idRegex, "Enter leader national Id"));
+                break;
+            case "4":
+                tourLeader.setBirthCertId(checkUntil(idRegex, "Enter leader birth certificate Id"));
+                break;
+            case "5":
+                tourLeader.setBirthDate(getDate("Enter birth date as year-month-day"));
+                break;
+            case "6":
+                tourLeader.setHireDate(getDate("Enter hire date as year-month-day"));
+                break;
+            case "7":
+                tourLeader.getAcquaintedLocations().removeLocation(getLocation("Enter Location as locationName:coordinate"));
+                tourLeader.getAcquaintedLocations().addLocation(getLocation("Enter new Location as locationName:coordinate"));
+                break;
+            }
+        waitInput();
+        back();
+    }
+
+    private void findLeader(){
         System.out.println("1- Find leader by name");
         System.out.println("2- Find leader by last name");
         System.out.println("3- Find leader by acquainted location");
@@ -203,69 +183,47 @@ public class Menu {
         System.out.println("6- find leader by younger than specific date");
         System.out.println("7-find leader by between date");
         System.out.println("8- back");
-        String buffer = checkInput(8);
-        if(!buffer.equals("")){
-            switch(buffer){
+        findLeaderOption(checkInput(8));
+    }
+
+    private void findLeaderOption(@NotNull String option) {
+        if(!option.equals("")){
+            switch(option){
                 case "1":
-                    data = checkUntil("[a-zA-Z][a-zA-Z ]+", "Enter leader name", "incorrect input");
-                    System.out.println(tourList.getTourLeaderList().findTourLeaderByName(data));
+                    System.out.println(tourManagement.getTourLeaderList().findTourLeaderByName(
+                            checkUntil(nameRegex, "Enter leader name")));
                     break;
                 case "2":
-                    data = checkUntil("[a-zA-Z][a-zA-Z ]+", "Enter leader last name", "incorrect input");
-                    System.out.println(tourList.getTourLeaderList().findTourLeaderByLastName(data));
+                    System.out.println(tourManagement.getTourLeaderList().findTourLeaderByLastName(
+                            checkUntil(nameRegex, "Enter leader last name")));
                     break;
                 case "3":
-                    data = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                            "Enter Location as locationName:coordinate",
-                            "Incorrect input");
-                    System.out.println(tourList.getTourLeaderList().findTourLeaderByLocation(
-                            new Location(data.split(":")[0], data.split(":")[1])));
+                    System.out.println(tourManagement.getTourLeaderList().findTourLeaderByLocation(
+                            new Location(getLocation("Enter Location as locationName:coordinate"))));
                     break;
                 case "4":
-                    data = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                            "Enter birth date as year-month-day", "Incorrect birth date");
-                    System.out.println(tourList.getTourLeaderList().findTourLeaderByDateOfBirth(
-                            new Date(Integer.parseInt(data.split("-")[0]),
-                                    Integer.parseInt(data.split("-")[1]),
-                                    Integer.parseInt(data.split("-")[2]))));
+                    System.out.println(tourManagement.getTourLeaderList().
+                            findTourLeaderByDateOfBirth(getDate("Enter birth date as year-month-day")));
                     break;
                 case "5":
-                    data = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                            "Enter birth date as year-month-day", "Incorrect birth date");
-                    System.out.println(tourList.getTourLeaderList().findTourLeaderByLowerDateOfBirth(
-                            new Date(Integer.parseInt(data.split("-")[0]),
-                                    Integer.parseInt(data.split("-")[1]),
-                                    Integer.parseInt(data.split("-")[2]))));
+                    System.out.println(tourManagement.getTourLeaderList().findTourLeaderByLowerDateOfBirth(
+                            getDate("Enter birth date as year-month-day")));
                     break;
                 case "6":
-                    data = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                            "Enter birth date as year-month-day", "Incorrect birth date");
-                    System.out.println(tourList.getTourLeaderList().findTourLeaderByUpperDateOfBirth(
-                            new Date(Integer.parseInt(data.split("-")[0]),
-                                    Integer.parseInt(data.split("-")[1]),
-                                    Integer.parseInt(data.split("-")[2]))));
+                    System.out.println(tourManagement.getTourLeaderList().findTourLeaderByUpperDateOfBirth(
+                            getDate("Enter birth date as year-month-day")));
                     break;
                 case "7":
-                    data = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                            "Enter lower birth date as year-month-day", "Incorrect birth date");
-                    String data1 = data = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                            "Enter upper birth date as year-month-day", "Incorrect birth date");
-                    System.out.println(tourList.getTourLeaderList().findTourLeaderByBirthDateRange(
-                            new Date(Integer.parseInt(data.split("-")[0]),
-                                    Integer.parseInt(data.split("-")[1]),
-                                    Integer.parseInt(data.split("-")[2])),
-                            new Date(Integer.parseInt(data1.split("-")[0]),
-                                    Integer.parseInt(data1.split("-")[1]),
-                                    Integer.parseInt(data1.split("-")[2]))));
+                    System.out.println(tourManagement.getTourLeaderList().findTourLeaderByBirthDateRange(
+                            getDate("Enter lower birth date as year-month-day"),
+                            getDate("Enter upper birth date as year-month-day")));
                     break;
             }
-            System.out.println("Press Enter for continue");
-            input.nextLine();
-            back();
+            waitInput();
         }
     }
 
-    public void tourMenu(){
+    private void tourMenu(){
         System.out.println("1- Show tour types");
         System.out.println("2- Show tours");
         System.out.println("3- Add tour type");
@@ -280,92 +238,82 @@ public class Menu {
         checkInput(10);
     }
 
-    public void showTourTypes(){
-        tourList.showTourTypes();
+    private void tourMenuCostumer(){
+        System.out.println("1- Show tour types");
+        System.out.println("2- Show tours");
+        System.out.println("3- Find tour Type");
+        System.out.println("4- Find Tour");
+        System.out.println("5- back");
+
+        checkInput(5);
+    }
+
+    private void showTourTypes(){
+        tourManagement.getTourTypeList().showTourTypes();
         waitInput();
     }
 
-    public void showTours(){
-        tourList.showTours();
+    private void showTours(){
+        tourManagement.getTourList().showTours();
         waitInput();
     }
 
-    public void addTourType(){
-        TourContainer tourType = new TourContainer(makeTourType());
+    private void addTourType(){
+        TourType tourType = new TourType(makeTourType());
         back();
-        tourList.addTourType(tourType);
+        tourManagement.addTourType(tourType);
     }
 
-    public void addTour(){
+    private void addTour(){
         String data1, data2;
         Tour tour = new Tour();
-        data1 = checkUntil("[a-zA-z][a-zA-z ]+", "Enter leader name", "Incorrect input");
-        data2 = checkUntil("[a-zA-z][a-zA-z ]+", "Enter leader last name", "Incorrect input");
-        if(tourList.getTourLeaderList().findSpecTourLeaderByFullName(data1, data2).equals(new TourLeader())) {
+        data1 = checkUntil(nameRegex, "Enter leader name");
+        data2 = checkUntil(nameRegex, "Enter leader last name");
+        if(tourManagement.getTourLeaderList().findSpecTourLeaderByFullName(data1, data2).equals(new TourLeader())) {
             System.out.println("There is any leader with this name");
             return;
         }
-        tour.setTourLeader(tourList.getTourLeaderList().findSpecTourLeaderByFullName(data1, data2));
-        tour.setTourId(Integer.parseInt(checkUntil("[1-9][0-9]+",
-                "Enter Tour Id", "Incorrect input")));
-        data1 = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                "Enter tour start date", "Incorrect input");
-        tour.setStartDate(new Date(Integer.parseInt(data1.split("-")[0]),
-                Integer.parseInt(data1.split("-")[1]),
-                Integer.parseInt(data1.split("-")[2])));
-        data1 = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                "Enter Location of tour typr as locationName:coordinate",
-                "Incorrect input");
-        for(TourContainer i: tourList.findTourTypeByLocation(new Location(data1.split(":")[0], data1.split(":")[1]))){
+        tour.setTourLeader(tourManagement.getTourLeaderList().findSpecTourLeaderByFullName(data1, data2));
+        tour.setTourId(Integer.parseInt(checkUntil(idRegex, "Enter Tour Id")));
+        tour.setStartDate(getDate("Enter tour start date"));
+        for(TourType i: tourManagement.getTourTypeList().findTourTypeByLocation(getLocation
+                ("Enter Location of tour type as locationName:coordinate"))){
             tour.setTourType(i);
             break;
         }
         back();
-       tourList.addTour(tour);
+       tourManagement.addTour(tour);
     }
 
-    private TourContainer makeTourType(){
+    @NotNull
+    private TourType makeTourType(){
+        String durationRegex = "[1-9]|[1-9][0-9]+";
         String data;
-        TourContainer tourType = new TourContainer();
-        tourType.setTourDuration(Integer.parseInt(checkUntil("[1-9]|[1-9][0-9]+",
-                "Enter tour duration",
-                "Incorrect input")));
-        tourType.setTourPrice(Integer.parseInt(checkUntil("[1-9]|[1-9][0-9]+",
-                "Enter tour price",
-                "Incorrect input")));
-        tourType.setMaxParticipants(Integer.parseInt(checkUntil("[1-9]|[1-9][0-9]+",
-                "Enter tour Maximum participants",
-                "Incorrect input")));
-        tourType.setMinParticipants(Integer.parseInt(checkUntil("[0-9]|[1-9][0-9]+",
-                "Enter tour Minimum participants",
-                "Incorrect input")));
-        data = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                "Enter source location as locationName:coordinate",
-                "Incorrect input");
-        tourType.setSource(new Location(data.split(":")[0], data.split(":")[1]));
-        data = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                "Enter destination location as locationName:coordinate",
-                "Incorrect input");
-        tourType.setDestination(new Location(data.split(":")[0], data.split(":")[1]));
-        data = checkUntil("Flight|Earth",
-                "Enter way of travel as Flight or Earth",
-                "Incorrect input");
-        if(data.equals("Flight")){
-            tourType.setWayOfTravel(WayOfTravel.FlightTrip);
-        }
-        else{
-            tourType.setWayOfTravel(WayOfTravel.EarthTrip);
-        }
+        TourType tourType = new TourType();
+        tourType.setTourDuration(Integer.parseInt(checkUntil(durationRegex, "Enter tour duration")));
+        tourType.setTourPrice(Integer.parseInt(checkUntil(durationRegex, "Enter tour price")));
+        tourType.setMaxParticipants(Integer.parseInt(checkUntil(durationRegex, "Enter tour Maximum participants")));
+        tourType.setMinParticipants(Integer.parseInt(checkUntil(durationRegex, "Enter tour Minimum participants")));
+        tourType.setSource(getLocation("Enter source location as locationName:coordinate"));
+        tourType.setDestination(getLocation("Enter destination location as locationName:coordinate"));
+        data = checkUntil("Flight|Earth", "Enter way of travel as Flight or Earth");
+        tourType.setWayOfTravel(data.equals("Flight") ? WayOfTravel.FlightTrip: WayOfTravel.EarthTrip);
+        tourType.setToDO(getToDoes(tourType));
+        return tourType;
+    }
+
+    @NotNull
+    private Set<Location>[] getToDoes(@NotNull TourType tourType) {
+        String data;
         int dayCounter = 0;
         Set<Location>[] toDo = new Set[tourType.getTourDuration()];
         for(int i = 0; i < toDo.length; i++){
             toDo[i] = new HashSet<>();
         }
         while(dayCounter < tourType.getTourDuration()){
-            data = checkUntil("([a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)|1)",
+            data = checkUntil(locationRegex,
                     "Enter visiting locations as locationName:coordinate for day" + (dayCounter + 1) +
-                            "\nIf you want to exit or go to next day press 1",
-                    "Incorrect input");
+                            "\nIf you want to exit or go to next day press 1");
             if(data.equals("1")){
                 dayCounter++;
             }
@@ -373,74 +321,69 @@ public class Menu {
                 toDo[dayCounter].add(new Location(data.split(":")[0], data.split(":")[1]));
             }
         }
-        tourType.setToDO(toDo);
-        return tourType;
+        return toDo;
     }
 
-    public void location(){
-        String data;
+    private void location(){
         System.out.println("1- Show locations");
         System.out.println("2- add location");
         System.out.println("3- Edit location");
         System.out.println("4- Remove location");
         System.out.println("5- back");
-        String buffer = checkInput(5);
-        if(!buffer.equals("")){
-            switch(buffer){
+        locationOption(checkInput(5));
+    }
+
+    private void locationCostumer(){
+        System.out.println("1- Show locations");
+        System.out.println("2- back");
+        locationOption(checkInput(2));
+    }
+
+    private void locationOption(@NotNull String option) {
+        if(!option.equals("")){
+            switch(option){
                 case "1":
-                    System.out.println(tourList.getLocation());
-                    System.out.println("Press Enter for continue");
-                    input.nextLine();
-                    input.nextLine();
-                    back();
+                    System.out.println(tourManagement.getLocation());
+                    waitInput();
                     break;
                 case "2":
-                    data = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                            "Enter Location as locationName:coordinate",
-                            "Incorrect input");
-                    tourList.getLocation().addLocation(data.split(":")[0], data.split(":")[1]);
+                    tourManagement.getLocation().addLocation(getLocation("Enter Location as locationName:coordinate"));
                     back();
                     break;
                 case "3":
                     System.out.println("1- change location Name\n2- Change coordinate\n3- Back");
-                    String buff = checkInput(3);
-                    if(!buff.equals("")) {
-                        switch (buff) {
-                            case "1":
-                                data = checkUntil("[a-zA-Z][a-zA-Z ]+|@[0-9]+",
-                                        "Enter coordinate",
-                                        "Incorrect input");
-                                String data1 = checkUntil("[a-zA-Z][a-zA-Z ]+", "Enter new Location name",
-                                        "Incorrect input");
-                                tourList.getLocation().replaceName(data, data1);
-                                back();
-                                break;
-                            case "2":
-                                data = checkUntil("[a-zA-Z][a-zA-Z ]+",
-                                        "Enter Location name",
-                                        "Incorrect input");
-                                String data2 = checkUntil("[a-zA-Z][a-zA-Z ]+|@[0-9]+", "Enter new coordinate",
-                                        "Incorrect input");
-                                tourList.getLocation().replaceCoordinate(data, data2);
-                                back();
-                                break;
-                        }
-                        back();
-                    }
+                    editLocationBar(checkInput(3));
                     break;
                 case "4":
-                    data = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                            "Enter Location as locationName:coordinate",
-                            "Incorrect input");
-                    tourList.getLocation().removeLocation(new Location(data.split(":")[0],
-                            data.split(":")[1]));
+                    tourManagement.getLocation().removeLocation(getLocation("Enter Location as locationName:coordinate"));
                     back();
                     break;
             }
         }
     }
 
-    public void showMap(){
+    private void editLocationBar(@NotNull String buff) {
+        if(!buff.equals("")) {
+            String coordinateRegex = "[a-zA-Z][a-zA-Z ]+|@[0-9]+";
+            switch (buff) {
+                case "1":
+                    tourManagement.getLocation().replaceName(
+                            checkUntil(coordinateRegex, "Enter coordinate"),
+                            checkUntil(nameRegex, "Enter new Location name"));
+                    back();
+                    break;
+                case "2":
+                    tourManagement.getLocation().replaceCoordinate(
+                            checkUntil(nameRegex, "Enter Location name"),
+                            checkUntil(coordinateRegex, "Enter new coordinate"));
+                    back();
+                    break;
+            }
+            back();
+        }
+    }
+
+    private void showMap(){
         System.out.println("1- Show source");
         System.out.println("2- Show destination");
         System.out.println("3- Show source and destination");
@@ -452,49 +395,34 @@ public class Menu {
         checkInput(8);
     }
 
-    public void showSource(){
-        Map map = new Map();
-        map.showLocation(getTour().getTourType().getSource());
+    private void showSource(){
+        map.showLocation(getTour().getSource());
         back();
     }
 
-    public void showDes(){
-        Map map = new Map();
-        map.showLocation(getTour().getTourType().getDestination());
+    private void showDes(){
+        map.showLocation(getTour().getDestination());
         back();
     }
 
-    public void showSourceDes(){
-        Map map = new Map();
-        map.showLocation(getTour().getTourType().getSource(), getTour().getTourType().getDestination());
+    private void showSourceDes(){
+        map.showLocation(getTour().getSource(), getTour().getDestination());
         back();
     }
 
-    public void showCurrentLocation(){
-        String data;
-        Map map = new Map();
-        data = checkUntil("[0-9]+-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])",
-                "Enter current Date", "Incorrect input");
-        Date date = new Date(Integer.parseInt(data.split("-")[0]),
-                Integer.parseInt(data.split("-")[1]),
-                Integer.parseInt(data.split("-")[2]));
-        map.showCurrent(getTour(), date);
+    private void showCurrentLocation(){
+        map.showCurrent(getTour(), getDate("Enter current Date"));
         back();
     }
 
-    public void showTourLocations(){
-        Map map = new Map();
+    private void showTourLocations(){
         map.showToDos(getTour());
         back();
     }
 
-    public void showLocation(){
-        Map map = new Map();
-        String data;
-        data = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                "Enter location as locationName:coordinate", "Incorrect input");
-        Location location = new Location(data.split(":")[0], data.split(":")[1]);
-        if(!tourList.getLocation().contains(location)){
+    private void showLocation(){
+        Location location = getLocation("Enter location as locationName:coordinate");
+        if(!tourManagement.getLocation().contains(location)){
             System.out.println("There is any location like this in location list");
             waitInput();
             return;
@@ -503,21 +431,15 @@ public class Menu {
         back();
     }
 
-    public void twoLocation(){
-        Map map = new Map();
-        String data;
-        data = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                "Enter first location as locationName:coordinate", "Incorrect input");
-        Location location1 = new Location(data.split(":")[0], data.split(":")[1]);
-        if(!tourList.getLocation().contains(location1)){
+    private void twoLocation(){
+        Location location1 = getLocation("Enter first location as locationName:coordinate");
+        if(!tourManagement.getLocation().contains(location1)){
             System.out.println("There is any location like this in location list");
             waitInput();
             return;
         }
-        data = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                "Enter second location as locationName:coordinate", "Incorrect input");
-        Location location2 = new Location(data.split(":")[0], data.split(":")[1]);
-        if(!tourList.getLocation().contains(location2)){
+        Location location2 = new Location(getLocation("Enter second location as locationName:coordinate"));
+        if(!tourManagement.getLocation().contains(location2)){
             System.out.println("There is any location like this in location list");
             waitInput();
             return;
@@ -526,11 +448,94 @@ public class Menu {
         back();
     }
 
-    public void back(){
+    private void changeUser(){
+        String userName = checkUntil(userRegex, "Enter your username");
+        if(users.containsKey(userName)){
+            curUser = userName;
+            clearScreen();
+            changePointer();
+            return;
+        }
+        System.out.println("Incorrect username.");
+        clearScreen();
+    }
+
+    private void changePointer(){
+        if(users.get(curUser).getUserState().equals(UserState.Costumer)){
+            pointer = "2";
+        }
+        else if(users.get(curUser).getUserState().equals(UserState.Admin)){
+            pointer = "1";
+        }
+    }
+
+    private void userSettings(){
+        System.out.println("1- Show users");
+        System.out.println("2- Add user");
+        System.out.println("3- Remove user");
+        System.out.println("4- Edit leader");
+        System.out.println("5- FindLeader");
+        System.out.println("6- Back");
+        checkInput(6);
+    }
+
+    private void editUserMenu(){
+        System.out.println("1- Show costumers");
+        System.out.println("2- Change username");
+        System.out.println("3- Chane Password");
+        System.out.println("4- Change email");
+        System.out.println("5- Change phone number");
+        System.out.println("6- Back");
+        switch (checkInput(6)){
+            case "1":
+                System.out.println(users.get(curUser));
+                waitInput();
+                break;
+            case "2":
+                users.get(curUser).setUserName(checkUntil(userRegex, "Enter new username"));
+                back();
+                break;
+            case "3":
+                users.get(curUser).setPassword(checkUntil("[0-9a-zA-z]+", "Enter new password"));
+                back();
+                break;
+            case "4":
+                users.get(curUser).setEmail(checkUntil("[0-9a-zA-Z.]+@[a-z]+.com", "Enter new email"));
+                back();
+                break;
+            case "5":
+                users.get(curUser).setPhoneNum(checkUntil("(09|\\+989)[1-9][0-9]{8}", "Enter new phone number"));
+                back();
+                break;
+        }
+    }
+
+    @NotNull
+    private int[] splitDate(String date){
+        int[] splitDate = new int[3];
+        for(int i = 0; i < 3; i++) {
+            splitDate[i] = Integer.parseInt(date.split("-")[i]);
+        }
+        return splitDate;
+    }
+
+    @NotNull
+    private Date getDate(String message) {
+        String buffer = checkUntil(dateRegex, message);
+        return new Date(splitDate(buffer)[0], splitDate(buffer)[1], splitDate(buffer)[2]);
+    }
+
+    @NotNull
+    private Location getLocation(String message) {
+        String[] buffer = checkUntil(locationRegex, message).split(":");
+        return new Location(buffer[0], buffer[1]);
+    }
+
+    private void back(){
         if(pointer.length() > 1) {
             pointer = pointer.substring(0, pointer.length() - 1);
-            clearScreen();
         }
+        clearScreen();
     }
 
     private void waitInput(){
@@ -540,7 +545,7 @@ public class Menu {
         back();
     }
 
-    public String checkUntil(String regex, String message, String err){
+    private String checkUntil(String regex, String message){
         String result;
         System.out.println(message);
         result = input.nextLine();
@@ -548,33 +553,17 @@ public class Menu {
             result = input.nextLine();
         }
         while(!result.matches(regex)){
-            System.out.println(err);
+            System.out.println("Incorrect input.");
             result = input.nextLine();
         }
         clearScreen();
         return result;
     }
 
-    public String checkInput(int upperRange){
+    @NotNull
+    private String checkInput(int upperRange){
         String buffer = input.next();
-        if(upperRange >= 9){
-            for(int i = 1; i < upperRange + 1; i++) {
-                if(!(buffer.compareTo(Integer.toString(upperRange)) <= upperRange - 1 && buffer.compareTo("1") >= 0)){
-                    clearScreen();
-                    System.out.println(buffer.compareTo(Integer.toString(upperRange)));
-                    System.out.println(buffer.compareTo(Integer.toString(1)));
-                    System.out.println("Incorrect input.");
-                    return "";
-                }
-            }
-        }
-        else {
-            if (!buffer.matches("[1-" + upperRange + "]")) {
-                clearScreen();
-                System.out.println("Incorrect input.");
-                return "";
-            }
-        }
+        if(!checkRange(upperRange, buffer)) return "";
 
         if(buffer.equals(Integer.toString(upperRange))){
             back();
@@ -586,29 +575,55 @@ public class Menu {
         return buffer;
     }
 
+    private boolean checkRange(int upperRange, String buffer) {
+        if(upperRange >= 9){
+            for(int i = 1; i < upperRange + 1; i++) {
+                if(!(buffer.compareTo(Integer.toString(upperRange)) <= upperRange - 1 && buffer.compareTo("1") >= 0)){
+                    clearScreen();
+                    System.out.println(buffer.compareTo(Integer.toString(upperRange)));
+                    System.out.println(buffer.compareTo(Integer.toString(1)));
+                    System.out.println("Incorrect input.");
+                    return false;
+                }
+            }
+        }
+        else {
+            if (!buffer.matches("[1-" + upperRange + "]")) {
+                clearScreen();
+                System.out.println("Incorrect input.");
+                return false;
+            }
+        }
+        return true;
+    }
+
     private Tour getTour(){
-        String data1, data2;
-        data1 = checkUntil("[a-zA-Z][a-zA-Z ]+:([a-zA-Z][a-zA-Z ]+|@[0-9]+)",
-                "Enter tour destination as locationName:coordinate",
-                "Incorrect input");
-        data2 = checkUntil("[1-9]|[1-9][0-9]+", "Enter tour Id", "Incorrect input");
-        if(tourList.findTour(new Location(data1.split(":")[0], data1.split(":")[1]),
-                Integer.parseInt(data2)).equals(new Tour())){
+        Location location = getLocation("Enter tour destination as locationName:coordinate");
+        int id = Integer.parseInt(checkUntil(idRegex, "Enter tour Id"));
+        if(tourManagement.getTourList().findTour(location, id).equals(new Tour())){
             System.out.println("There is any location like this in location list");
             waitInput();
             return new Tour();
         }
-        return tourList.findTour(new Location(data1.split(":")[0], data1.split(":")[1]),
-                Integer.parseInt(data2));
+        return tourManagement.getTourList().findTour(location, id);
     }
 
     public void showMenu(){
+        if(users.get(curUser).getUserState().equals(UserState.Admin)) {
+            defaultMenuOption();
+        }
+        else if(users.get(curUser).getUserState().equals(UserState.Costumer)){
+            costumerMenuOption();
+        }
+    }
+
+    private void defaultMenuOption() {
         switch (pointer){
             case "1":
                 showDefault();
                 break;
             case "11":
-                showLeaders();
+                leaderMenu();
                 break;
             case "111":
                 showLeaderList();
@@ -668,26 +683,80 @@ public class Menu {
             case "147":
                 twoLocation();
                 break;
+            default:
+                System.out.println("Incorrect input");
+                setDefault();
+                break;
+        }
+    }
+
+    private void costumerMenuOption() {
+        switch (pointer){
+            case "2":
+                showDefaultCostumer();
+                break;
+            case "21":
+                leaderMenuCostumer();
+                break;
+            case "211":
+                showLeaderList();
+                break;
+            case "212":
+                findLeader();
+                break;
+            case "22":
+                tourMenuCostumer();
+                break;
+            case "221":
+                showTourTypes();
+                break;
+            case "222":
+                showTours();
+                break;
+
+            case "23":
+                locationCostumer();
+                break;
+            case "24":
+                showMap();
+                break;
+            case "241":
+                showSource();
+                break;
+            case "242":
+                showDes();
+                break;
+            case "243":
+                showSourceDes();
+                break;
+            case "244":
+                showCurrentLocation();
+                break;
+            case "245":
+                showTourLocations();
+                break;
+            case "246":
+                showLocation();
+                break;
+            case "247":
+                twoLocation();
+                break;
+            case "25":
+                editUserMenu();
+                break;
+            case "26":
+                changeUser();
+                break;
+            default:
+                System.out.println("Incorrect input");
+                setDefaultCustomer();
+                break;
         }
     }
 
     public void clearScreen(){
         for(int i = 0; i < 50; i++){
             System.out.println();
-        }
-    }
-
-    public static void main(String[] args) {
-        Menu menu = new Menu();
-        while(true) {
-            try {
-                menu.showMenu();
-            }
-            catch (Exception e){
-                menu.clearScreen();
-                System.out.println("THere is an error please try again.");
-                menu.setDefault();
-            }
         }
     }
 }

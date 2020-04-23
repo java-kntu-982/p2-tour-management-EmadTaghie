@@ -1,7 +1,8 @@
 package ir.ac.kntu;
 
-import org.apache.commons.collections.map.HashedMap;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -9,79 +10,40 @@ public class Location {
     private Map<String, String> location;
 
     public Location(){
-        location = new HashedMap();
+        location = new HashMap<>();
     }
 
-    public Location(String location, String coordinate){
-        this.location = new HashedMap();
-        if(location == null || coordinate == null){
-            return;
-        }
+    public Location(@NotNull String location, @NotNull String coordinate){
+        this.location = new HashMap<>();
         this.location.put(location, coordinate);
     }
-    public Location(Location location){
-        if(location == null){
-            this.location = new HashedMap();
-            return;
-        }
+    public Location(@NotNull Location location){
         this.location = location.getLocation();
     }
 
     public Map<String, String> getLocation() {
-        if(location.size() == 0){
-            return null;
-        }
         return location;
     }
 
-    public void setLocation(Map<String, String> location) {
-        this.location = location;
-    }
-
-    public String getLocation(String name) {
-        if(location.size() != 0){
-        return location.get(name);
-        }
-        return null;
-    }
-
     public void addLocation(String name, String coordinate) {
-        if(location != null) {
-            for(Map.Entry<String, String> i: location.entrySet()){
-                if(i.getValue().equals(coordinate)){
-                    return;
-                }
-            }
-            this.location.put(name, coordinate);
-        }
-    }
-
-    public void addLocation(Location location) {
-        if(location != null) {
-            for(Map.Entry<String, String> i: location.getLocation().entrySet()){
-                for(Map.Entry<String, String> j: this.location.entrySet())
-                if(i.getValue().equals(j.getValue())){
-                    return;
-                }
-            }
-            this.location.putAll(location.getLocation());
-        }
-    }
-
-    public void removeLocationByName(String locationName){
-        location.remove(locationName);
-    }
-
-    public void removeLocationByCoordinate(String locationCoordinate){
-        for(Map.Entry<String, String> i: location.entrySet()) {
-            if (i.getValue().equals(locationCoordinate)) {
-                location.remove(i.getKey());
-                break;
+        for(Map.Entry<String, String> i: location.entrySet()){
+            if(i.getValue().equals(coordinate)){
+                return;
             }
         }
+        this.location.put(name, coordinate);
     }
 
-    public void removeLocation(Location location){
+    public void addLocation(@NotNull Location location){
+            if(contains(location)){
+                return;
+            }
+            for(Map.Entry<String, String> i: location.getLocation().entrySet()) {
+                this.location.put(i.getKey(), i.getValue());
+            }
+    }
+
+    public void removeLocation(@NotNull Location location){
         for(Map.Entry<String, String> i: location.getLocation().entrySet()) {
             for(Map.Entry<String, String> j: location.getLocation().entrySet()){
                 if(i.getValue().equals(j.getValue()) && i.getKey().equals(j.getKey())){
@@ -104,11 +66,8 @@ public class Location {
             }
         }
     }
-    public void clearMap(){
-        this.location.clear();
-    }
 
-    public boolean contains(Location location){
+    public boolean contains(@NotNull Location location){
         boolean containsLocation = true;
         for(Map.Entry<String, String> i: location.getLocation().entrySet()){
             containsLocation = containsLocation && this.location.containsKey(i.getKey())
@@ -122,12 +81,12 @@ public class Location {
         if(location == null || location.size() == 0){
             return "There is anything for show";
         }
-        String locData = "";
+        StringBuilder locData = new StringBuilder();
         for(Map.Entry<String, String> i: location.entrySet()){
-            locData += i.getKey() + ": " + i.getValue() + "\n";
+            locData.append(i.getKey()).append(": ").append(i.getValue()).append("\n");
         }
-        locData = locData.substring(0, locData.length() - 1);
-        return locData;
+        locData = new StringBuilder(locData.substring(0, locData.length() - 1));
+        return locData.toString();
     }
 
     @Override
@@ -141,16 +100,5 @@ public class Location {
     @Override
     public int hashCode() {
         return Objects.hash(location);
-    }
-
-    public static void main(String[] args) {
-        Location location = new Location();
-        location.addLocation("Yazd", "Yazd");
-        location.addLocation("Tehran", "Tehran");
-        Location location1 = new Location();
-        location1.addLocation("ahmad", "salam");
-        location1.addLocation("ehsan", "khodafez");
-        location.addLocation(location1);
-        System.out.println(location);
     }
 }

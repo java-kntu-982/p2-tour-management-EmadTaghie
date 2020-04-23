@@ -1,14 +1,16 @@
 package ir.ac.kntu;
 
-import ir.ac.kntu.maputil.MapUtil;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
+        Menu menu = new Menu();
+        while(true) {
 
-//        Good for showing one location
-        MapUtil.showMap("Shiraz");
-        MapUtil.showMap("@29.6257966,52.5563165,17z");
-//        Good for showing two locations
-        MapUtil.showMap("Tehran","Dubai");
+            menu.showMenu();
+
+        }
     }
 }

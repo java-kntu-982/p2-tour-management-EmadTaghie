@@ -62,15 +62,6 @@ public class Date {
     }
 
     /**
-     * @param year  Check and set year
-     * @param month Check and set month
-     * @param day   Check and set day
-     */
-    public void setDate(int year, int month, int day) {
-        checkAndSetDate(year, month, day);
-    }
-
-    /**
      * @return Returns year
      */
     public int getYear() {
@@ -78,24 +69,10 @@ public class Date {
     }
 
     /**
-     * @param year Check and set year
-     */
-    public void setYear(int year) {
-        checkAndSetDate(year, this.month, this.day);
-    }
-
-    /**
      * @return Returns month
      */
     public int getMonth() {
         return month;
-    }
-
-    /**
-     * @param month Check and set month
-     */
-    public void setMonth(int month) {
-        checkAndSetDate(this.year, month, this.day);
     }
 
     /**
@@ -117,43 +94,6 @@ public class Date {
      */
     public String toString() {
         return year + "-" + month + "-" + day;
-    }
-
-    /**
-     * @return Next Day responsible to current date
-     */
-    public Date nextDay() {
-        Date curDate = new Date(this);
-        Date nextDate = new Date(this);
-        if (curDate.month == 12) {
-            handleTheLastMonth(curDate, nextDate);
-        } else if (curDate.day < 30) {
-            curDate.day++;
-        } else if (curDate.day == 30 && curDate.month < 7) {
-            nextDate.day++;
-        } else {
-            nextDate.day = 1;
-            nextDate.month++;
-        }
-        return nextDate;
-    }
-
-    /**
-     * @param curDate  Get current date and checks if day is in range of month and is the year is leap year
-     * @param nextDate Returns nextDate responsible to current date
-     */
-    private void handleTheLastMonth(Date curDate, Date nextDate) {
-        int endOfMonthDay = 29;
-        if (isLeapYear(curDate.year)) {
-            endOfMonthDay = 30;
-        }
-        if (curDate.day == endOfMonthDay) {
-            nextDate.year++;
-            nextDate.month = 1;
-            nextDate.day = 1;
-        } else {
-            nextDate.day++;
-        }
     }
 
     /**
