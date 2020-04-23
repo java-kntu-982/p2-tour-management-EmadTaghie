@@ -8,9 +8,13 @@ public class Main {
     public static void main(String[] args) {
         Menu menu = new Menu();
         while(true) {
-
-            menu.showMenu();
-
+            try {
+                menu.showMenu();
+            }
+            catch (Exception e){
+                System.out.println("Incorrect input.");
+                menu.setDefault();
+            }
         }
     }
 }
